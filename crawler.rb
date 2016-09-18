@@ -28,7 +28,6 @@ module Crawler
 		end
 
 		def testing
-			
 		end
 	end
 end

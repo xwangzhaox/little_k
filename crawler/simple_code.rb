@@ -63,10 +63,10 @@ module Crawler
 			end
 			print_comparsion if r_print # 画边界
 
-			# puts "========== 给所有div加上简码class (sp1) ==========="
-			# puts arr_sp1.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
-			# puts "========== 给所有div加上简码class (sp2) ==========="
-			# puts arr_sp2.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
+			puts "========== 给所有div加上简码class (sp1) ==========="
+			puts arr_sp1.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
+			puts "========== 给所有div加上简码class (sp2) ==========="
+			puts arr_sp2.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
 
 			return commen_stru, diff_stru
 		end
