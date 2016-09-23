@@ -14,6 +14,15 @@ module Crawler
 			def SimpleCode(url)
 				SimpleCode.new url
 			end
+
+			def update_page_data_by_day
+				# if # 抓取信息点有存储
+				# 	# 按照信息点位置，再抓一遍
+				# else
+				# 	# 对比两张网页，获取不同点
+					
+				# end
+			end
 		end
 	end
 end

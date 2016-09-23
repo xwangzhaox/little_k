@@ -5,6 +5,9 @@ module Crawler
 		class SimpleCode
 			
 			def initialize(options)
+				temp_file = File.open("./crawler/out_put_temp/page_diff.html", "r")
+				@report = Nokogiri::HTML::DocumentFragment.parse temp_file.readlines.join.gsub(/\n|\r/, "")
+				@report.at_css(".first_url").content = options
 				@page = Nokogiri::HTML(open(options)).css('body')
 			end
 
@@ -13,11 +16,11 @@ module Crawler
 				i = 1
 				hash = {}
 				element.children.each do |e|
-					next unless e.name == "div"
+					# next unless e.name == "div"
+					next if ["script", "noscript", "style", "comment"].include? e.name
 					sp = parent_sp.nil? ? 
 						i.to_s : (parent_sp + "-" + i.to_s)
-					hash[sp] = e.get_attribute("class")
-					# binding.pry
+					hash[sp] = {:name => e.name, :class => e.get_attribute('class')}#, :content => e.content} # "#{e.name}.#{e.get_attribute('class')}"
 					i += 1
 					# 递归处理
 					hash = hash.merge scan_html_structrue e, sp
@@ -27,6 +30,8 @@ module Crawler
 
 			# 输入两个文件，返回他们相异的部分结构简码，判断是否要返回完整相同部分结构简码
 			def comparsion_page f2, r_print = true
+				@report.at_css(".second_url").content = f2
+				f2 = Nokogiri::HTML(open(f2)).css('body')
 				hash_1 = self.scan_html_structrue
 				hash_2 = scan_html_structrue f2
 				arr_sp1 = hash_1.keys
@@ -68,11 +73,11 @@ module Crawler
 				end
 				print_comparsion if r_print # 画边界
 
-				puts "========== 给所有div加上简码class (sp1) ==========="
-				puts arr_sp1.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
-				puts "========== 给所有div加上简码class (sp2) ==========="
-				puts arr_sp2.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
-
+				# puts "========== 给所有div加上简码class (sp1) ==========="
+				# puts arr_sp1.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
+				# puts "========== 给所有div加上简码class (sp2) ==========="
+				# puts arr_sp2.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
+				output_report_file
 				return commen_stru, diff_stru
 			end
 
@@ -102,10 +107,13 @@ module Crawler
 				if stru_1.nil? and stru_2.nil?
 					puts "-".ljust(103, "-")
 				elsif stru_1.nil?
+					@report.css("tr").last.add_next_sibling "<tr class='diff'><td>-</td><td>#{stru_2}(#{class_2})</td></tr>"
 					puts "| " + "-".ljust(50) + "| " + str_2 + "|"
 				elsif stru_2.nil?
+					@report.css("tr").last.add_next_sibling "<tr class='diff'><td>#{stru_1}(#{class_1})</td><td>-</td></tr>"
 					puts "| " + str_1 + "| " + "-".ljust(50) + "|"
 				else
+					@report.css("tr").last.add_next_sibling "<tr class='commen'><td>#{stru_1}(#{class_1})</td><td>#{stru_2}(#{class_2})</td></tr>"
 					puts "| " + str_1 + "| " + str_2 + "|"
 				end
 			end
@@ -121,6 +129,16 @@ module Crawler
 					return "$('.#{dom_class}').css('background-color','yellow');" + 
 						"$('.#{dom_class}').append(\"<div style='background-color: red; position: absolute; right: 0;top:0;'>#{sp}</div>\");"
 				end
+			end
+
+			def output_report_file
+				i = 1
+				Dir.foreach("./crawler/") do |filename|
+					i = filename.split("_").last.to_i + 1 if filename.include?("page_diff_report")
+				end
+				File.open("./crawler/page_diff_report_#{i}.html", "w"){|file|file.write @report.to_html}
+				puts "Create file ...... crawler/page_diff_report_#{i}.html"
+				`open ./crawler/page_diff_report_#{i}.html`
 			end
 		end
 	end
