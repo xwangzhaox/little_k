@@ -1,13 +1,13 @@
 # simple_code.rb
+require "crawler/page/report"
 
 module Crawler
 	module Page
 		class SimpleCode
 			
 			def initialize(options)
-				temp_file = File.open("./crawler/out_put_temp/page_diff.html", "r")
-				@report = Nokogiri::HTML::DocumentFragment.parse temp_file.readlines.join.gsub(/\n|\r/, "")
-				@report.at_css(".first_url").content = options
+				@report = Page::Report.new "page_diff.html"
+				@report.first_url = options
 				@page = Nokogiri::HTML(open(options)).css('body')
 			end
 
@@ -30,7 +30,7 @@ module Crawler
 
 			# 输入两个文件，返回他们相异的部分结构简码，判断是否要返回完整相同部分结构简码
 			def comparsion_page f2, r_print = true
-				@report.at_css(".second_url").content = f2
+				@report.second_url = f2
 				f2 = Nokogiri::HTML(open(f2)).css('body')
 				print "Scan page1 structrue ......"
 				hash_1 = self.scan_html_structrue
@@ -107,13 +107,13 @@ module Crawler
 			private
 			# 格式化输出对比结果，逐行调用
 			def print_comparsion stru_1=nil, stru_2=nil, class_1=nil, class_2=nil
-				next if stru_1.nil? and stru_2.nil?
+				return if stru_1.nil? and stru_2.nil?
 				if stru_1.nil?
-					@report.css("tr").last.add_next_sibling "<tr class='diff'><td>-</td><td>#{stru_2}(#{class_2})</td></tr>"
+					@report.add_next_sibling_to_last_tr "<tr class='diff'><td>-</td><td>#{stru_2}(#{class_2})</td></tr>"
 				elsif stru_2.nil?
-					@report.css("tr").last.add_next_sibling "<tr class='diff'><td>#{stru_1}(#{class_1})</td><td>-</td></tr>"
+					@report.add_next_sibling_to_last_tr "<tr class='diff'><td>#{stru_1}(#{class_1})</td><td>-</td></tr>"
 				else
-					@report.css("tr").last.add_next_sibling "<tr class='commen'><td>#{stru_1}(#{class_1})</td><td>#{stru_2}(#{class_2})</td></tr>"
+					@report.add_next_sibling_to_last_tr "<tr class='commen'><td>#{stru_1}(#{class_1})</td><td>#{stru_2}(#{class_2})</td></tr>"
 				end
 			end
 
