@@ -32,8 +32,11 @@ module Crawler
 			def comparsion_page f2, r_print = true
 				@report.at_css(".second_url").content = f2
 				f2 = Nokogiri::HTML(open(f2)).css('body')
+				print "Scan page1 structrue ......"
 				hash_1 = self.scan_html_structrue
+				print " Done.\nScan page2 structrue ...... "
 				hash_2 = scan_html_structrue f2
+				print "Done.\n"
 				arr_sp1 = hash_1.keys
 				arr_sp2 = hash_2.keys
 
@@ -42,6 +45,7 @@ module Crawler
 
 				sp1_index = sp2_index = 0 # 输出两个结构的不同点
 				print_comparsion if r_print # 画边界
+				print "Compare pages ...... "
 				loop do
 					# 如果连个数组都遍历结束就结束循环
 					break if sp1_index >= arr_sp1.size and sp2_index >= arr_sp2.size
@@ -77,6 +81,7 @@ module Crawler
 				# puts arr_sp1.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
 				# puts "========== 给所有div加上简码class (sp2) ==========="
 				# puts arr_sp2.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
+				print "Done.\n"
 				output_report_file
 				return commen_stru, diff_stru
 			end
@@ -102,19 +107,13 @@ module Crawler
 			private
 			# 格式化输出对比结果，逐行调用
 			def print_comparsion stru_1=nil, stru_2=nil, class_1=nil, class_2=nil
-				str_1 = "#{stru_1}(#{class_1})".ljust(50) rescue "".ljust(50)
-				str_2 = "#{stru_2}(#{class_2})".ljust(50) rescue "".ljust(50)
-				if stru_1.nil? and stru_2.nil?
-					puts "-".ljust(103, "-")
-				elsif stru_1.nil?
+				next if stru_1.nil? and stru_2.nil?
+				if stru_1.nil?
 					@report.css("tr").last.add_next_sibling "<tr class='diff'><td>-</td><td>#{stru_2}(#{class_2})</td></tr>"
-					puts "| " + "-".ljust(50) + "| " + str_2 + "|"
 				elsif stru_2.nil?
 					@report.css("tr").last.add_next_sibling "<tr class='diff'><td>#{stru_1}(#{class_1})</td><td>-</td></tr>"
-					puts "| " + str_1 + "| " + "-".ljust(50) + "|"
 				else
 					@report.css("tr").last.add_next_sibling "<tr class='commen'><td>#{stru_1}(#{class_1})</td><td>#{stru_2}(#{class_2})</td></tr>"
-					puts "| " + str_1 + "| " + str_2 + "|"
 				end
 			end
 
