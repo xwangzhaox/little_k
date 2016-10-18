@@ -1,7 +1,10 @@
-$LOAD_PATH.unshift(File.dirname(__FILE__))
+#encoding=UTF-8
+ASSETS_DIR = File.expand_path File.join(File.dirname(__FILE__), '../lib')
+$LOAD_PATH.unshift(ASSETS_DIR)
 
 require 'pry'
 require 'crawler/page'
+# require 'crawler/report'
 
 module Crawler
 	class Crawler
@@ -10,7 +13,7 @@ module Crawler
 			@ttd = %w(https://xueqiu.com/S/SZ000736 https://xueqiu.com/S/SH601595/GSJJ https://xueqiu.com/S/SH600977 https://xueqiu.com/S/SH601595 https://xueqiu.com/S/SH601595)
 			@page1 = Page.SimpleCode @ttd.first
 			# puts @page1.scan_html_structrue
-			@page1.comparsion_page @ttd.first
+			a, b = @page1.comparsion_page @ttd[2]
 		end
 
 		def testing

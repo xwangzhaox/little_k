@@ -1,13 +1,13 @@
 # simple_code.rb
-require "crawler/page/report"
+require "crawler/report/page_diff"
+require'iconv'
 
 module Crawler
 	module Page
 		class SimpleCode
 			
 			def initialize(options)
-				@report = Page::Report.new "page_diff.html"
-				@report.first_url = options
+				@report = Report::PageDiff.new({:first_url => options})
 				@page = Nokogiri::HTML(open(options)).css('body')
 			end
 
@@ -20,7 +20,7 @@ module Crawler
 					next if ["script", "noscript", "style", "comment"].include? e.name
 					sp = parent_sp.nil? ? 
 						i.to_s : (parent_sp + "-" + i.to_s)
-					hash[sp] = {:name => e.name, :class => e.get_attribute('class')}#, :content => e.content} # "#{e.name}.#{e.get_attribute('class')}"
+					hash[sp] = {:name => e.name, :id => e.get_attribute('id'), :class => e.get_attribute('class'), :content => e.content, :xpath => e.path} # "#{e.name}.#{e.get_attribute('class')}"
 					i += 1
 					# 递归处理
 					hash = hash.merge scan_html_structrue e, sp
@@ -41,7 +41,7 @@ module Crawler
 				arr_sp2 = hash_2.keys
 
 				commen_stru = {}
-				diff_stru = { :l => {}, :r => {} }
+				diff_stru = { :l => {}, :r => {}, :diff => [] }
 
 				sp1_index = sp2_index = 0 # 输出两个结构的不同点
 				print_comparsion if r_print # 画边界
@@ -50,28 +50,39 @@ module Crawler
 					# 如果连个数组都遍历结束就结束循环
 					break if sp1_index >= arr_sp1.size and sp2_index >= arr_sp2.size
 
-					if arr_sp1[sp1_index] == arr_sp2[sp2_index]  # 如果结构简码相同，记录到 commen_stru 里
-						print_comparsion arr_sp1[sp1_index], arr_sp2[sp2_index], hash_1[arr_sp1[sp1_index]], hash_2[arr_sp2[sp2_index]] if r_print
-						commen_stru[arr_sp1[sp1_index]] = [hash_1[arr_sp1[sp1_index]], hash_2[arr_sp2[sp2_index]]]
-						sp1_index += 1
-						sp2_index += 1
-					elsif arr_sp1[sp1_index].nil? or arr_sp2[sp2_index].nil?  # 如果一个结构简码数组遍历结束，剩余部分按照不同
-						if arr_sp1[sp1_index].nil?
-							print_comparsion nil, arr_sp2[sp2_index], nil, hash_2[arr_sp2[sp2_index]] if r_print
-							diff_stru[:r][arr_sp2[sp2_index]] = hash_2[arr_sp2[sp2_index]]
+					sp1 = arr_sp1[sp1_index]
+					sp2 = arr_sp2[sp2_index]
+					if sp1 == sp2 # 如果结构简码相同，记录到 commen_stru 里
+						if %w(div table tr ul).include? hash_1[sp1][:name] and hash_1[sp1][:class] == hash_2[sp2][:class] # 结构性标签，不考虑内容是否相同，只看class是否一样
+							hash_1[sp1][:content] = hash_2[sp2][:content] = "***"
+							print_comparsion sp1, sp2, hash_1[sp1], hash_2[sp2] if r_print
+							commen_stru[sp1] = [hash_1[sp1], hash_2[sp2]]
+						elsif hash_1[sp1].eql? hash_2[sp2]
+							print_comparsion sp1, sp2, hash_1[sp1], hash_2[sp2] if r_print
+							commen_stru[sp1] = [hash_1[sp1], hash_2[sp2]]
 						else
-							print_comparsion arr_sp1[sp1_index], nil, hash_1[arr_sp1[sp1_index]], nil if r_print
-							diff_stru[:l][arr_sp1[sp1_index]] = hash_1[arr_sp1[sp1_index]]
+							print_comparsion sp1, sp2, hash_1[sp1], hash_2[sp2] if r_print
+							diff_stru[:diff] << [{sp1 => hash_1[sp1]}, {sp2 => hash_2[sp2]}]
 						end
 						sp1_index += 1
 						sp2_index += 1
-					elsif arr_sp1[sp1_index].l_count > arr_sp2[sp2_index].l_count # 如果左边对比的简码比右边简码的级别低 e.g. L:1-2-1, R:1-2
-						print_comparsion arr_sp1[sp1_index], nil, hash_1[arr_sp1[sp1_index]], nil if r_print
-						diff_stru[:l][arr_sp1[sp1_index]] = hash_1[arr_sp1[sp1_index]]
+					elsif sp1.nil? or sp2.nil? # 如果一个结构简码数组遍历结束，剩余部分按照不同
+						if sp1.nil?
+							print_comparsion nil, sp2, nil, hash_2[sp2] if r_print
+							diff_stru[:r][sp2] = hash_2[sp2]
+						else
+							print_comparsion sp1, nil, hash_1[sp1], nil if r_print
+							diff_stru[:l][sp1] = hash_1[sp1]
+						end
 						sp1_index += 1
-					elsif arr_sp1[sp1_index].l_count < arr_sp2[sp2_index].l_count# 如果左边对比的简码比右边简码的级别高 e.g. L:1-2, R:1-2-1
-						print_comparsion nil, arr_sp2[sp2_index], nil, hash_2[arr_sp2[sp2_index]] if r_print
-						diff_stru[:r][arr_sp2[sp2_index]] = hash_2[arr_sp2[sp2_index]]
+						sp2_index += 1
+					elsif sp1.l_count > sp2.l_count # 如果左边对比的简码比右边简码的级别低 e.g. L:1-2-1, R:1-2
+						print_comparsion sp1, nil, hash_1[sp1], nil if r_print
+						diff_stru[:l][sp1] = hash_1[sp1]
+						sp1_index += 1
+					elsif sp1.l_count < sp2.l_count# 如果左边对比的简码比右边简码的级别高 e.g. L:1-2, R:1-2-1
+						print_comparsion nil, sp2, nil, hash_2[sp2] if r_print
+						diff_stru[:r][sp2] = hash_2[sp2]
 						sp2_index += 1
 					end
 				end
@@ -82,7 +93,7 @@ module Crawler
 				# puts "========== 给所有div加上简码class (sp2) ==========="
 				# puts arr_sp2.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
 				print "Done.\n"
-				output_report_file
+				@report.output_to_file if r_print
 				return commen_stru, diff_stru
 			end
 
@@ -112,6 +123,8 @@ module Crawler
 					@report.add_next_sibling_to_last_tr "<tr class='diff'><td>-</td><td>#{stru_2}(#{class_2})</td></tr>"
 				elsif stru_2.nil?
 					@report.add_next_sibling_to_last_tr "<tr class='diff'><td>#{stru_1}(#{class_1})</td><td>-</td></tr>"
+				elsif !class_1.eql? class_2
+					@report.add_next_sibling_to_last_tr "<tr class='diff'><td>#{stru_1}(#{class_1})</td><td>#{stru_2}(#{class_2})</td></tr>"
 				else
 					@report.add_next_sibling_to_last_tr "<tr class='commen'><td>#{stru_1}(#{class_1})</td><td>#{stru_2}(#{class_2})</td></tr>"
 				end
@@ -128,16 +141,6 @@ module Crawler
 					return "$('.#{dom_class}').css('background-color','yellow');" + 
 						"$('.#{dom_class}').append(\"<div style='background-color: red; position: absolute; right: 0;top:0;'>#{sp}</div>\");"
 				end
-			end
-
-			def output_report_file
-				i = 1
-				Dir.foreach("./crawler/") do |filename|
-					i = filename.split("_").last.to_i + 1 if filename.include?("page_diff_report")
-				end
-				File.open("./crawler/page_diff_report_#{i}.html", "w"){|file|file.write @report.to_html}
-				puts "Create file ...... crawler/page_diff_report_#{i}.html"
-				`open ./crawler/page_diff_report_#{i}.html`
 			end
 		end
 	end

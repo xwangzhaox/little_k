@@ -3,8 +3,9 @@
 require 'nokogiri'
 require 'open-uri'
 require 'crawler/page/simple_code'
+# require 'crawler/report'
 # require 'crawler/page/modularization'
-# require 'crawler/page/to_object'
+require 'crawler/page/to_object'
 
 module Crawler
 	module Page
@@ -13,6 +14,10 @@ module Crawler
 
 			def SimpleCode(url)
 				SimpleCode.new url
+			end
+
+			def ToObject(hash)
+				ToObject.new hash
 			end
 
 			def update_page_data_by_day
