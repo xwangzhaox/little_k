@@ -1,29 +1,24 @@
 # simple_code.rb
 require "crawler/report/page_diff"
-require'iconv'
+require 'iconv'
 
 module Crawler
 	module Page
-		class SimpleCode
-			
-			def initialize(options)
-				@report = Report::PageDiff.new({:first_url => options})
-				@page = Nokogiri::HTML(open(options)).css('body')
-			end
+		module SimpleCode
 
 			# 递归扫描HTML文件结构, 获取网页结构简码
-			def scan_html_structrue element=@page, parent_sp = nil
+			def scan_html_structrue element, parent_sp = nil, get_stru = false
 				i = 1
 				hash = {}
 				element.children.each do |e|
-					# next unless e.name == "div"
+					next if e.name != "div" and get_stru
 					next if ["script", "noscript", "style", "comment"].include? e.name
 					sp = parent_sp.nil? ? 
 						i.to_s : (parent_sp + "-" + i.to_s)
 					hash[sp] = {:name => e.name, :id => e.get_attribute('id'), :class => e.get_attribute('class'), :content => e.content, :xpath => e.path} # "#{e.name}.#{e.get_attribute('class')}"
 					i += 1
 					# 递归处理
-					hash = hash.merge scan_html_structrue e, sp
+					hash = hash.merge scan_html_structrue e, sp, get_stru
 				end
 				return hash
 			end
@@ -33,7 +28,7 @@ module Crawler
 				@report.second_url = f2
 				f2 = Nokogiri::HTML(open(f2)).css('body')
 				print "Scan page1 structrue ......"
-				hash_1 = self.scan_html_structrue
+				hash_1 = scan_html_structrue @nokogiri_object
 				print " Done.\nScan page2 structrue ...... "
 				hash_2 = scan_html_structrue f2
 				print "Done.\n"
@@ -94,7 +89,8 @@ module Crawler
 				# puts arr_sp2.map.with_index{|s, i|{(i)=>s}}.inject(""){|result, n|result += "$('div:eq(#{n.keys.first})').addClass(\"little_k_#{n.values.first}\");"}
 				print "Done.\n"
 				@report.output_to_file if r_print
-				return commen_stru, diff_stru
+				@diff_hash = diff_stru
+				# return commen_stru, diff_stru
 			end
 
 			def print_diff_to_page hash
@@ -142,6 +138,7 @@ module Crawler
 						"$('.#{dom_class}').append(\"<div style='background-color: red; position: absolute; right: 0;top:0;'>#{sp}</div>\");"
 				end
 			end
+			# end
 		end
 	end
 end

@@ -5,7 +5,7 @@ module Crawler
 	module Report
 		class PageDiff
 			TEMPLATE_FILE = File.join(File.dirname("__FILE__"), "lib/crawler/report/templates/page_diff.html")
-			FILE_NAME_BASE_PATH = File.join(File.dirname("__FILE__"), "lib/crawler/report/tmp")
+			FILE_NAME_BASE_PATH = File.join(File.dirname("__FILE__"), "lib/crawler/report/tmp/")
 			REPORT_FILE_NAME_BASE_PRE = "page_diff_report_"
 			
 			def initialize(options)
