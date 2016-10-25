@@ -1,0 +1,15 @@
+xueqiu: 
+  detail: 
+    url: https://xueqiu.com/S/
+    stru_sp:  
+    attrbutes: 
+      company_description: 
+        name: 简介
+        indication_find: true
+      company_bisiness: 
+        name: 业务
+        indication_find: true
+      uuid: 
+        name: 股票代码
+        regular: /[A-Z]{2}:\d{6}/
+        indication_find: false
