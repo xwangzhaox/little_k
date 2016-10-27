@@ -28,10 +28,18 @@ module Crawler
 
 			def query(sql = "")
 				puts "SQL could not be blank." if sql == ""
-				result = @dbh.query(sql)
+				begin
+					result = @dbh.query(sql)
+				rescue Mysql2::Error => e
+					binding.pry
+				end
 				printf "(DB:) #{sql}\n"
 				printf "%d rows were inserted:\n", @dbh.affected_rows
 				result
+			end
+
+			def last_id
+				@dbh.last_id
 			end
 		end
 	end

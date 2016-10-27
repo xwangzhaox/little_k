@@ -21,7 +21,8 @@ module Crawler
 					puts "There has somthing wrong."
 				end
 			end
-			# page.save
+			page.attributes_item
+			page.save
 		end
 	end
 end

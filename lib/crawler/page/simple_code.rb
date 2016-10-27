@@ -57,7 +57,7 @@ module Crawler
 							commen_stru[sp1] = [hash_1[sp1], hash_2[sp2]]
 						else
 							print_comparsion sp1, sp2, hash_1[sp1], hash_2[sp2] if r_print
-							diff_stru[:diff] << [{sp1 => hash_1[sp1]}, {sp2 => hash_2[sp2]}]
+							diff_stru[:diff] << {sp1 => {:l => hash_1[sp1], :r => hash_2[sp2]}}
 						end
 						sp1_index += 1
 						sp2_index += 1
